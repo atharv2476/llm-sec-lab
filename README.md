@@ -1,7 +1,7 @@
 # LLM Security Testing Framework
 
 **Live demo (real AI, rate-limited):** https://llm-sec-lab-1.onrender.com (may take ~1 min to wake up)
-**Playground (simulated):** https://claude.ai/artifact/C9mqgnZiUaV2VbpkqBZjff
+
 
 An intentionally vulnerable Flask chatbot plus a Python scanner that tests it for
 OWASP LLM Top 10 issues (prompt injection, system prompt leakage, sensitive info disclosure).
