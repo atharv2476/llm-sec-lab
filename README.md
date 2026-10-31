@@ -30,12 +30,10 @@ Output: JSON + HTML report.
 
 
 
-![Before](before.jpg)
 
 
 
 
-![After](after.jpg)
 
 
 
