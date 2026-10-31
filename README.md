@@ -17,3 +17,35 @@ Output: JSON + HTML report.
 - [x] Payload-driven scanner + HTML report
 - [ ] Real LLM integration
 - [ ] More OWASP LLM categories
+
+## Results (openai/gpt-oss-20b via Groq, 10 payloads x 3 runs)
+
+**Before defense:** 0 real `FLAG{` leaks, but 1 confirmed system-prompt leakage
+(translation trick, LLM07) and 1 behavior hijack (roleplay, LLM01, no data leaked).
+
+**After defense:** 0/10 leaked; benign control still answered normally.
+
+
+
+![Before](before.jpg)
+
+
+
+
+![After](after.jpg)
+
+
+
+## Defense layers (`DEFENSE=on python app.py`)
+1. Hardened system prompt
+2. Input filter (regex)
+3. Output filter (blocks secret/prompt fragments, incl. base64-decoded text)
+
+## Limitations
+- Regex filters are keyword-based and can be bypassed (other phrasing/languages).
+- Detection is keyword-based; a Marathi reply can slip past it.
+- Small payload set; LLM output is non-deterministic.
+
+## Recommendations
+- Never store secrets in the system prompt.
+- Add a classifier (e.g. a prompt-guard model) and an LLM-as-judge for detection.
