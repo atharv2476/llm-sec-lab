@@ -1,0 +1,25 @@
+:root{--bg:#F3F5FA;--panel:#fff;--ink:#14213D;--mute:#56607C;--line:#D5DBEA;--blue:#2F5BEA;--blue-ink:#fff;--bad:#D62839;--good:#1F8A5B;--you:#E4EAFD;--bot:#EEF0F6;--win-bg:#E3F5EC}
+@media (prefers-color-scheme:dark){:root{--bg:#0E1424;--panel:#161D33;--ink:#E8ECF8;--mute:#9AA5C4;--line:#2A3454;--blue:#6C8CFF;--blue-ink:#0E1424;--bad:#FF6B78;--good:#4CD39B;--you:#22305C;--bot:#1D2540;--win-bg:#17342B}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+main{max-width:640px;margin:0 auto;padding:28px 18px 40px}
+h1{font-size:clamp(1.9rem,7vw,2.8rem);line-height:1.1;margin:0 0 10px;font-weight:800;letter-spacing:-.02em}
+.lead{color:var(--mute);margin:0 0 20px}
+.switch{display:inline-flex;align-items:center;gap:10px;background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600}
+.switch input{width:20px;height:20px;accent-color:var(--blue)}
+.desc{color:var(--mute);font-size:.92rem;margin:8px 2px 16px;min-height:1.4em}
+.win{display:none;background:var(--win-bg);border:1.5px solid var(--good);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.win.show{display:block}
+.chat{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;overflow:hidden}
+.log{height:340px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:86%;padding:9px 12px;border-radius:12px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.97rem}
+.msg.bot{background:var(--bot);align-self:flex-start;border-bottom-left-radius:3px}
+.msg.you{background:var(--you);align-self:flex-end;border-bottom-right-radius:3px}
+.msg.blocked{outline:1.5px solid var(--bad)}
+.row{display:flex;gap:8px;padding:10px;border-top:1.5px solid var(--line)}
+input[type=text]{flex:1;min-width:0;font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:9px;padding:10px 12px}
+input:focus-visible,button:focus-visible{outline:2.5px solid var(--blue);outline-offset:2px}
+.send{font:inherit;font-weight:600;background:var(--blue);color:var(--blue-ink);border:0;border-radius:9px;padding:0 18px;cursor:pointer}
+.meta{display:flex;justify-content:space-between;color:var(--mute);font-size:.88rem;margin:10px 2px 18px}
+footer{color:var(--mute);font-size:.86rem}
+a{color:var(--blue)}

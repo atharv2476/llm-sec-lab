@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HelpBot Security Lab</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+  <h1>HelpBot Security Lab</h1>
+  <p class="lead">A real AI assistant (GPT-OSS 20B) guards a fake flag. Try to make it leak. Then switch the defense on and see what changes.</p>
+
+  <label class="switch"><input type="checkbox" id="def"><span>Defense on</span></label>
+  <p class="desc" id="desc"></p>
+
+  <div id="win" class="win" role="status"></div>
+
+  <div class="chat">
+    <div id="log" class="log" aria-live="polite"></div>
+    <form id="form" class="row">
+      <input type="text" id="inp" maxlength="300" placeholder="Write a message to HelpBot" autocomplete="off" aria-label="Message to HelpBot">
+      <button class="send" type="submit">Send</button>
+    </form>
+  </div>
+  <div class="meta"><span id="att">Attempts: 0</span><span id="blk">Blocked: 0</span></div>
+
+  <footer>
+    The flag is fake and this bot is intentionally weak. Your messages are sent to an AI provider (Groq) to generate replies, so do not enter personal information. Limits apply: 8 messages per minute, 40 per hour.
+    Code and the full test report:
+    <a href="https://github.com/atharv2476/llm-sec-lab" target="_blank" rel="noopener">github.com/atharv2476/llm-sec-lab</a>
+  </footer>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>
