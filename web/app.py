@@ -141,6 +141,15 @@ def stats_page():
         for r in reversed(d["recent"]))
     prows = "".join("<tr><td>%s</td><td>%d</td></tr>" % (p, n)
                     for p, n in sorted(d["patterns"].items(), key=lambda x: -x[1])[:10]) or "<tr><td colspan=2>none yet</td></tr>"
+    try:
+        import json as _json, os as _os
+        from html import escape as _esc
+        with open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "judge_summary.json")) as _f:
+            _j = _json.load(_f)
+        jrows = "".join("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" %
+                        tuple(_esc(str(x.get(k, ""))) for k in ("id", "owasp", "keyword", "judge", "agree")) for x in _j)
+    except Exception:
+        jrows = "<tr><td colspan=5>snapshot unavailable</td></tr>"
     html = ("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'>"
             "<title>Stats</title><style>body{font-family:system-ui;max-width:640px;margin:20px auto;padding:0 14px;"
             "background:#0f1420;color:#e6e9f2}table{width:100%%;border-collapse:collapse;font-size:.85rem}"
@@ -150,8 +159,9 @@ def stats_page():
             "<ul><li>Total messages: %d</li><li>Defense on: %d | Defense off: %d</li>"
             "<li>Blocked by filter: %d</li><li>Rate-limited: %d</li><li>Flag leaked: %d</li></ul>"
             "<h3>Top blocked patterns</h3><table><tr><th>Pattern</th><th>Count</th></tr>%s</table>"
+            "<h3>Scanner snapshot (last local run, not live)</h3><table><tr><th>ID</th><th>Category</th><th>Keyword</th><th>Judge</th><th>Agree</th></tr>%s</table>"
             "<h3>Last 30</h3><table><tr><th>Time</th><th>Defense</th><th>Blocked</th><th>Leaked</th></tr>%s</table>"
-            % (uptime_min, d["total"], d["defense_on"], d["defense_off"], d["blocked"], d["rate_limited"], d["leaked"], prows, rows))
+            % (uptime_min, d["total"], d["defense_on"], d["defense_off"], d["blocked"], d["rate_limited"], d["leaked"], prows, jrows, rows))
     return Response(html, mimetype="text/html")
 
 @app.route("/")
