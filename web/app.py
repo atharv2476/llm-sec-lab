@@ -1,6 +1,6 @@
-import os, re, time, base64, threading
+import os, re, time, base64, threading, hmac
 import requests
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 API_KEY = os.environ.get("GROQ_API_KEY")
@@ -86,12 +86,56 @@ def ask_llm(msg, defense):
         return "The AI service is busy. Please try again."
 
 
+
+STATS_LOCK = threading.Lock()
+STATS = {"start": time.time(), "total": 0, "defense_on": 0, "defense_off": 0,
+         "blocked": 0, "leaked": 0, "recent": []}
+
+def record(defense, blocked, leaked):
+    with STATS_LOCK:
+        STATS["total"] += 1
+        STATS["defense_on" if defense else "defense_off"] += 1
+        if blocked: STATS["blocked"] += 1
+        if leaked: STATS["leaked"] += 1
+        STATS["recent"].append({"t": time.strftime("%H:%M:%S"), "defense": defense,
+                                "blocked": blocked, "leaked": leaked})
+        STATS["recent"] = STATS["recent"][-30:]
+
+def check_admin():
+    key = os.environ.get("DASH_PASSWORD", "")
+    auth = request.authorization
+    return bool(key) and auth and hmac.compare_digest(auth.password or "", key)
+
 @app.after_request
 def headers(resp):
     resp.headers["X-Content-Type-Options"] = "nosniff"
     resp.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none'"
     return resp
 
+
+
+@app.route("/stats")
+def stats_page():
+    if not check_admin():
+        return Response("Auth required", 401, {"WWW-Authenticate": 'Basic realm="stats"'})
+    with STATS_LOCK:
+        d = dict(STATS)
+    uptime_min = int((time.time() - d["start"]) / 60)
+    rows = "".join(
+        "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" %
+        (r["t"], "on" if r["defense"] else "off", "yes" if r["blocked"] else "no", "yes" if r["leaked"] else "no")
+        for r in reversed(d["recent"]))
+    html = ("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'>"
+            "<title>Stats</title><style>body{font-family:system-ui;max-width:640px;margin:20px auto;padding:0 14px;"
+            "background:#0f1420;color:#e6e9f2}table{width:100%%;border-collapse:collapse;font-size:.85rem}"
+            "td,th{border-bottom:1px solid #243049;padding:6px;text-align:left}</style>"
+            "<h2>HelpBot live stats</h2>"
+            "<p>Since restart (%s min ago, resets on redeploy/sleep)</p>"
+            "<ul><li>Total messages: %d</li><li>Defense on: %d | Defense off: %d</li>"
+            "<li>Blocked by filter: %d</li><li>Flag leaked: %d</li></ul>"
+            "<h3>Last 30</h3><table><tr><th>Time</th><th>Defense</th><th>Blocked</th><th>Leaked</th></tr>%s</table>"
+            % (uptime_min, d["total"], d["defense_on"], d["defense_off"], d["blocked"], d["leaked"], rows))
+    return Response(html, mimetype="text/html")
 
 @app.route("/")
 def home():
@@ -109,10 +153,14 @@ def chat():
     if err:
         return jsonify(reply=err, blocked=False), 429
     if defense and BLOCK_IN.search(msg):
+        record(defense, True, False)
         return jsonify(reply=SAFE, blocked=True)
     reply = ask_llm(msg, defense)
     if defense and any(m in decoded(reply).lower() for m in BLOCK_OUT):
+        record(defense, True, False)
         return jsonify(reply=SAFE, blocked=True)
+    leaked = "flag{" in decoded(reply).lower() or "demo_secret" in decoded(reply).lower()
+    record(defense, False, leaked)
     return jsonify(reply=reply, blocked=False)
 
 
