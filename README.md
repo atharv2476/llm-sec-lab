@@ -19,8 +19,8 @@ Output: JSON + HTML report.
 ## Roadmap
 - [x] Vulnerable chatbot (mock LLM)
 - [x] Payload-driven scanner + HTML report
-- [ ] Real LLM integration
-- [ ] More OWASP LLM categories
+- [x] Real LLM integration (Groq, with model fallback)
+- [x] OWASP LLM Top 10 mapping (10 payloads; not full coverage of every category)
 
 ## Results (openai/gpt-oss-20b via Groq, 10 payloads x 3 runs)
 
