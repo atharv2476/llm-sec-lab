@@ -47,6 +47,9 @@ Output: JSON + HTML report.
 - Regex filters are keyword-based and can be bypassed (other phrasing/languages).
 - Detection is keyword-based; a Marathi reply can slip past it.
 - Small payload set; LLM output is non-deterministic.
+- Stats dashboard is in-memory, so counts reset on redeploy or when the free-tier server sleeps.
+- Model fallback: only openai/gpt-oss-120b was tested as a fallback (with a deliberately broken primary); qwen/qwen3.8-27b is untested. Worst case is about 90s (3 models x 30s timeout).
+- Free-tier hosting: the first request after sleep can take about a minute.
 
 ## Recommendations
 - Never store secrets in the system prompt.
