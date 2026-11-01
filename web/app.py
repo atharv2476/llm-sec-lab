@@ -101,14 +101,15 @@ def ask_llm(msg, defense):
 
 STATS_LOCK = threading.Lock()
 STATS = {"start": time.time(), "total": 0, "defense_on": 0, "defense_off": 0,
-         "blocked": 0, "leaked": 0, "rate_limited": 0, "recent": []}
+         "blocked": 0, "leaked": 0, "rate_limited": 0, "recent": [], "patterns": {}}
 
-def record(defense, blocked, leaked):
+def record(defense, blocked, leaked, pattern=None):
     with STATS_LOCK:
         STATS["total"] += 1
         STATS["defense_on" if defense else "defense_off"] += 1
         if blocked: STATS["blocked"] += 1
         if leaked: STATS["leaked"] += 1
+        if pattern: STATS["patterns"][pattern] = STATS["patterns"].get(pattern, 0) + 1
         STATS["recent"].append({"t": time.strftime("%H:%M:%S"), "defense": defense,
                                 "blocked": blocked, "leaked": leaked})
         STATS["recent"] = STATS["recent"][-30:]
@@ -132,11 +133,14 @@ def stats_page():
         return Response("Auth required", 401, {"WWW-Authenticate": 'Basic realm="stats"'})
     with STATS_LOCK:
         d = dict(STATS)
+        d["patterns"] = dict(STATS["patterns"])
     uptime_min = int((time.time() - d["start"]) / 60)
     rows = "".join(
         "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" %
         (r["t"], "on" if r["defense"] else "off", "yes" if r["blocked"] else "no", "yes" if r["leaked"] else "no")
         for r in reversed(d["recent"]))
+    prows = "".join("<tr><td>%s</td><td>%d</td></tr>" % (p, n)
+                    for p, n in sorted(d["patterns"].items(), key=lambda x: -x[1])[:10]) or "<tr><td colspan=2>none yet</td></tr>"
     html = ("<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'>"
             "<title>Stats</title><style>body{font-family:system-ui;max-width:640px;margin:20px auto;padding:0 14px;"
             "background:#0f1420;color:#e6e9f2}table{width:100%%;border-collapse:collapse;font-size:.85rem}"
@@ -145,8 +149,9 @@ def stats_page():
             "<p>Since restart (%s min ago, resets on redeploy/sleep)</p>"
             "<ul><li>Total messages: %d</li><li>Defense on: %d | Defense off: %d</li>"
             "<li>Blocked by filter: %d</li><li>Rate-limited: %d</li><li>Flag leaked: %d</li></ul>"
+            "<h3>Top blocked patterns</h3><table><tr><th>Pattern</th><th>Count</th></tr>%s</table>"
             "<h3>Last 30</h3><table><tr><th>Time</th><th>Defense</th><th>Blocked</th><th>Leaked</th></tr>%s</table>"
-            % (uptime_min, d["total"], d["defense_on"], d["defense_off"], d["blocked"], d["rate_limited"], d["leaked"], rows))
+            % (uptime_min, d["total"], d["defense_on"], d["defense_off"], d["blocked"], d["rate_limited"], d["leaked"], prows, rows))
     return Response(html, mimetype="text/html")
 
 @app.route("/")
@@ -165,12 +170,13 @@ def chat():
     if err:
         mark_rate_limited()
         return jsonify(reply=err, blocked=False), 429
-    if defense and BLOCK_IN.search(msg):
-        record(defense, True, False)
+    m_in = BLOCK_IN.search(msg) if defense else None
+    if m_in:
+        record(defense, True, False, "input: " + m_in.group(0).lower().strip())
         return jsonify(reply=SAFE, blocked=True)
     reply = ask_llm(msg, defense)
     if defense and any(m in decoded(reply).lower() for m in BLOCK_OUT):
-        record(defense, True, False)
+        record(defense, True, False, "output filter")
         return jsonify(reply=SAFE, blocked=True)
     leaked = "flag{" in decoded(reply).lower() or "demo_secret" in decoded(reply).lower()
     record(defense, False, leaked)
