@@ -44,6 +44,10 @@ def client_ip():
     return request.headers.get("X-Forwarded-For", request.remote_addr or "?").split(",")[0].strip()
 
 
+def mark_rate_limited():
+    with STATS_LOCK:
+        STATS["rate_limited"] += 1
+
 def check_limits(ip):
     # Global limits are the real backstop (IP headers can be spoofed).
     with lock:
@@ -89,7 +93,7 @@ def ask_llm(msg, defense):
 
 STATS_LOCK = threading.Lock()
 STATS = {"start": time.time(), "total": 0, "defense_on": 0, "defense_off": 0,
-         "blocked": 0, "leaked": 0, "recent": []}
+         "blocked": 0, "leaked": 0, "rate_limited": 0, "recent": []}
 
 def record(defense, blocked, leaked):
     with STATS_LOCK:
@@ -132,9 +136,9 @@ def stats_page():
             "<h2>HelpBot live stats</h2>"
             "<p>Since restart (%s min ago, resets on redeploy/sleep)</p>"
             "<ul><li>Total messages: %d</li><li>Defense on: %d | Defense off: %d</li>"
-            "<li>Blocked by filter: %d</li><li>Flag leaked: %d</li></ul>"
+            "<li>Blocked by filter: %d</li><li>Rate-limited: %d</li><li>Flag leaked: %d</li></ul>"
             "<h3>Last 30</h3><table><tr><th>Time</th><th>Defense</th><th>Blocked</th><th>Leaked</th></tr>%s</table>"
-            % (uptime_min, d["total"], d["defense_on"], d["defense_off"], d["blocked"], d["leaked"], rows))
+            % (uptime_min, d["total"], d["defense_on"], d["defense_off"], d["blocked"], d["rate_limited"], d["leaked"], rows))
     return Response(html, mimetype="text/html")
 
 @app.route("/")
@@ -151,6 +155,7 @@ def chat():
         return jsonify(reply="Please type a message.")
     err = check_limits(client_ip())
     if err:
+        mark_rate_limited()
         return jsonify(reply=err, blocked=False), 429
     if defense and BLOCK_IN.search(msg):
         record(defense, True, False)
