@@ -159,7 +159,7 @@ def stats_page():
             "<ul><li>Total messages: %d</li><li>Defense on: %d | Defense off: %d</li>"
             "<li>Blocked by filter: %d</li><li>Rate-limited: %d</li><li>Flag leaked: %d</li></ul>"
             "<h3>Top blocked patterns</h3><table><tr><th>Pattern</th><th>Count</th></tr>%s</table>"
-            "<h3>Scanner snapshot (last local run, not live)</h3><table><tr><th>ID</th><th>Category</th><th>Keyword</th><th>Judge</th><th>Agree</th></tr>%s</table>"
+            "<h3>Scanner snapshot (last local run, defense off, not live)</h3><table><tr><th>ID</th><th>Category</th><th>Keyword</th><th>Judge</th><th>Agree</th></tr>%s</table>"
             "<h3>Last 30</h3><table><tr><th>Time</th><th>Defense</th><th>Blocked</th><th>Leaked</th></tr>%s</table>"
             % (uptime_min, d["total"], d["defense_on"], d["defense_off"], d["blocked"], d["rate_limited"], d["leaked"], prows, jrows, rows))
     return Response(html, mimetype="text/html")

@@ -50,6 +50,7 @@ Output: JSON + HTML report.
 - Stats dashboard is in-memory, so counts reset on redeploy or when the free-tier server sleeps.
 - Model fallback: openai/gpt-oss-120b and qwen/qwen3.8-27b were each tested as fallbacks locally (with deliberately broken earlier models). Worst case is about 90s (3 models x 30s timeout).
 - Free-tier hosting: the first request after sleep can take about a minute.
+- Scanner snapshot on /stats is static (undefended bot, last local run); re-run scanner_judge.py and commit web/judge_summary.json to refresh it.
 
 ## Recommendations
 - Never store secrets in the system prompt.
