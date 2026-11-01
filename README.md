@@ -1,6 +1,7 @@
 # LLM Security Testing Framework
 
 **Live demo (real AI, rate-limited):** https://llm-sec-lab-1.onrender.com (may take ~1 min to wake up)
+**Live stats dashboard:** https://llm-sec-lab-1.onrender.com/stats (password-protected; shows attempt counts, defense on/off split, blocked/leaked — resets on redeploy or sleep)
 
 
 An intentionally vulnerable Flask chatbot plus a Python scanner that tests it for
