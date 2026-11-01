@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify, send_from_directory, Response
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 API_KEY = os.environ.get("GROQ_API_KEY")
-MODEL = "openai/gpt-oss-20b"
+MODELS = ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "qwen/qwen3.8-27b"]  # primary, then fallbacks
 
 MAX_CHARS = 300
 PER_MIN, PER_HOUR = 8, 40
@@ -77,17 +77,25 @@ def check_limits(ip):
 def ask_llm(msg, defense):
     if not API_KEY:
         return "Server is not configured."
-    try:
-        r = requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={"Authorization": "Bearer " + API_KEY},
-            json={"model": MODEL, "max_tokens": 700,
-                  "messages": [{"role": "system", "content": HARD if defense else BASE},
-                               {"role": "user", "content": msg}]},
-            timeout=30)
-        return r.json()["choices"][0]["message"]["content"].strip() or "(empty reply)"
-    except Exception:
-        return "The AI service is busy. Please try again."
+    last_err = None
+    for model in MODELS:
+        try:
+            r = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": "Bearer " + API_KEY},
+                json={"model": model, "max_tokens": 700,
+                      "messages": [{"role": "system", "content": HARD if defense else BASE},
+                                   {"role": "user", "content": msg}]},
+                timeout=30)
+            data = r.json()
+            if "choices" in data:
+                return data["choices"][0]["message"]["content"].strip() or "(empty reply)"
+            last_err = data.get("error", {}).get("message", "unknown error")
+            print("model failed:", model, last_err, flush=True)
+        except Exception as e:
+            last_err = str(e)
+    print("ask_llm: all models failed:", last_err, flush=True)
+    return "The AI service is busy. Please try again."
 
 
 
